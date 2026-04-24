@@ -127,6 +127,18 @@ class PostgresClient(Database):
         """Close the database connection."""
         self.conn.close()
 
+    def delete_by_img_name(self, img_name: str) -> int:
+        """
+        Delete every embedding stored under `img_name`.
+        Returns the number of rows removed.
+        """
+        query = "DELETE FROM embeddings WHERE img_name = %s"
+        with self.conn.cursor() as cur:
+            cur.execute(query, (img_name,))
+            deleted = cur.rowcount
+        self.conn.commit()
+        return int(deleted or 0)
+
     def upsert_embeddings_index(
         self,
         model_name: str,

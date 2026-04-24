@@ -210,3 +210,24 @@ def build_index(
         logger.error(str(err))
         logger.error(tb_str)
         return {"error": f"Exception while building index: {str(err)} - {tb_str}"}, 400
+
+
+
+def delete_by_img_name(
+    img_name: str,
+    database_type: str,
+    connection_details: str,
+) -> Tuple[Dict[str, Any], int]:
+    try:
+        result = DeepFace.delete_by_img_name(
+            img_name=img_name,
+            database_type=database_type,
+            connection_details=connection_details,
+        )
+        return result, 200
+    except Exception as err:
+        tb_str = traceback.format_exc()
+        logger.error(str(err))
+        logger.error(tb_str)
+        return {"error": f"Exception while deleting: {str(err)} - {tb_str}"}, 400
+

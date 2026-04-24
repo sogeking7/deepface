@@ -958,3 +958,40 @@ def build_index(
         connection_details=connection_details,
         max_neighbors_per_node=max_neighbors_per_node,
     )
+
+
+def delete_by_img_name(
+    img_name: str,
+    database_type: str = "postgres",
+    connection_details: Optional[Union[Dict[str, Any], str]] = None,
+    connection: Any = None,
+) -> Dict[str, Any]:
+    """
+    Delete registered face embeddings from the database by image name.
+    Args:
+        img_name (str): Image name identifier used during registration.
+        database_type (str): Type of database to delete from. Options: 'postgres', 'mongo',
+            'weaviate', 'neo4j', 'pgvector', 'pinecone' (default is 'postgres').
+        connection_details (dict or str): Connection details for the database.
+        connection (Any): Existing database connection object. If provided, this connection
+            will be used instead of creating a new one.
+
+        Note:
+            Instead of providing `connection` or `connection_details`, database connection
+            information can be supplied via environment variables:
+            - DEEPFACE_POSTGRES_URI
+            - DEEPFACE_MONGO_URI
+            - DEEPFACE_WEAVIATE_URI
+            - DEEPFACE_NEO4J_URI
+            - DEEPFACE_PINECONE_API_KEY
+    Returns:
+        result (dict): A dictionary with the following keys.
+            - deleted (int): Number of embeddings removed from the database.
+            - img_name (str): The image name identifier that was deleted.
+    """
+    return datastore.delete_by_img_name(
+        img_name=img_name,
+        database_type=database_type,
+        connection_details=connection_details,
+        connection=connection,
+    )

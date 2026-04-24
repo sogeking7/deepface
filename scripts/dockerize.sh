@@ -27,10 +27,10 @@ docker build -t deepface .
 ENV_FILE="deepface/api/.env"
 if [ -f "$ENV_FILE" ]; then
     echo ".env found, sending to container"
-    docker run -p 5005:5000 --env-file "$ENV_FILE" deepface
+    docker run --name deepface -p 5005:5000 -v "${HOME}/.deepface/weights:/root/.deepface/weights" --env-file "$ENV_FILE" deepface
 else
-    echo "no .env found, running container without env vars"
-    docker run -p 5005:5000 deepface
+    echo "no .env found"
+#    docker run -p 5005:5000 deepface
 fi
 
 
