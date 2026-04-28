@@ -995,3 +995,59 @@ def delete_by_img_name(
         connection_details=connection_details,
         connection=connection,
     )
+
+
+def identify(
+    img: Union[str, NDArray[Any], IO[bytes]],
+    user_face_id: str,
+    model_name: str = "VGG-Face",
+    detector_backend: str = "opencv",
+    distance_metric: str = "cosine",
+    enforce_detection: bool = True,
+    align: bool = True,
+    l2_normalize: bool = False,
+    expand_percentage: int = 0,
+    normalization: str = "base",
+    anti_spoofing: bool = False,
+    database_type: str = "postgres",
+    connection_details: Optional[Union[Dict[str, Any], str]] = None,
+    connection: Any = None,
+) -> Dict[str, Any]:
+    """
+    1:1 face verification against the registered identity stored under `user_face_id`.
+
+    Loads the cached embedding (registered via `register` with `img_name=user_face_id`),
+    computes an embedding for the supplied image, compares them, and returns:
+
+        { "verified": True,  "message": None }
+        { "verified": False, "message": "<reason>" }
+
+    Args:
+        img: image source (path / numpy array / IO / base64 / url).
+        user_face_id: identifier whose cached embedding should be compared against.
+        model_name, detector_backend, distance_metric, l2_normalize, anti_spoofing,
+            align, enforce_detection, expand_percentage, normalization: same as in
+            register/search.
+        database_type, connection_details, connection: db backend selectors.
+
+    Returns:
+        dict with keys:
+            - verified (bool): True iff distance <= threshold and exactly one face.
+            - message (str | None): Reason for non-verification, None on success.
+    """
+    return datastore.identify(
+        img=img,
+        user_face_id=user_face_id,
+        model_name=model_name,
+        detector_backend=detector_backend,
+        distance_metric=distance_metric,
+        enforce_detection=enforce_detection,
+        align=align,
+        l2_normalize=l2_normalize,
+        expand_percentage=expand_percentage,
+        normalization=normalization,
+        anti_spoofing=anti_spoofing,
+        database_type=database_type,
+        connection_details=connection_details,
+        connection=connection,
+    )
