@@ -1008,6 +1008,7 @@ def identify(
     l2_normalize: bool = False,
     expand_percentage: int = 0,
     normalization: str = "base",
+    threshold: Optional[float] = None,
     anti_spoofing: bool = False,
     database_type: str = "postgres",
     connection_details: Optional[Union[Dict[str, Any], str]] = None,
@@ -1028,12 +1029,16 @@ def identify(
         model_name, detector_backend, distance_metric, l2_normalize, anti_spoofing,
             align, enforce_detection, expand_percentage, normalization: same as in
             register/search.
+        threshold: decision threshold for the distance. If left unset, the pre-tuned value
+            for the model/metric pair is used. Lower it to make verification stricter.
         database_type, connection_details, connection: db backend selectors.
 
     Returns:
         dict with keys:
             - verified (bool): True iff distance <= threshold and exactly one face.
             - message (str | None): Reason for non-verification, None on success.
+            - distance (float | None): distance between the supplied and cached embeddings.
+            - threshold (float | None): threshold the distance was compared against.
     """
     return datastore.identify(
         img=img,
@@ -1046,6 +1051,7 @@ def identify(
         l2_normalize=l2_normalize,
         expand_percentage=expand_percentage,
         normalization=normalization,
+        threshold=threshold,
         anti_spoofing=anti_spoofing,
         database_type=database_type,
         connection_details=connection_details,

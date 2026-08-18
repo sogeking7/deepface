@@ -282,8 +282,12 @@ def identify() -> Tuple[Dict[str, Any], int]:
     1:1 face verification: compares the supplied `img` against the cached embedding
     stored under `user_face_id` (registered via /register with img_name=user_face_id).
     Returns:
-        { "verified": true,  "message": null }
-        { "verified": false, "message": "<reason>" }
+        { "verified": true,  "message": null,      "distance": 0.21, "threshold": 0.3 }
+        { "verified": false, "message": "<reason>", "distance": 0.42, "threshold": 0.3 }
+    distance/threshold are present only once the embedding comparison runs; earlier
+    error branches (no face, multiple faces, not registered) omit them.
+    Optional `threshold` in the request overrides the pre-tuned value for the
+    model/metric pair; lower values make verification stricter.
     """
     # load injected variables and container
     variables: Variables = blueprint.variables  # type: ignore[attr-defined]
@@ -310,6 +314,20 @@ def identify() -> Tuple[Dict[str, Any], int]:
     if not user_face_id:
         return {"verified": False, "message": "user_face_id is required"}, 400
 
+    # multipart clients serialize an unset optional field as the literal string "null",
+    # so treat that (and a blank value) the same as an omitted threshold.
+    raw_threshold = input_args.get("threshold")
+    threshold = None
+    if isinstance(raw_threshold, str) and raw_threshold.strip().lower() in ("", "null", "none"):
+        raw_threshold = None
+    if raw_threshold is not None:
+        try:
+            threshold = float(raw_threshold)
+        except (TypeError, ValueError):
+            return {"verified": False, "message": "threshold must be a number"}, 400
+        if threshold <= 0:
+            return {"verified": False, "message": "threshold must be greater than 0"}, 400
+
     return service.identify(
         img=img,
         user_face_id=user_face_id,
@@ -321,6 +339,7 @@ def identify() -> Tuple[Dict[str, Any], int]:
         l2_normalize=bool(input_args.get("l2_normalize", False)),
         expand_percentage=int(input_args.get("expand_percentage", 0)),
         normalization=input_args.get("normalization", "base"),
+        threshold=threshold,
         anti_spoofing=bool(input_args.get("anti_spoofing", False)),
         database_type=variables.database_type,
         connection_details=variables.conection_details,

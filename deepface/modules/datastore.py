@@ -679,6 +679,7 @@ def identify(
     l2_normalize: bool = False,
     expand_percentage: int = 0,
     normalization: str = "base",
+    threshold: Optional[float] = None,
     anti_spoofing: bool = False,
     database_type: str = "postgres",
     connection_details: Optional[Union[Dict[str, Any], str]] = None,
@@ -691,15 +692,25 @@ def identify(
     `img_name` column the embedding was registered with), computes an embedding for
     the supplied image, and compares the two with the chosen distance metric.
 
+    Args:
+        threshold (float): Decision threshold for the distance. If left unset, the pre-tuned
+            value for the model/metric pair is used. Lower it to make verification stricter.
+
     Returns:
         dict with keys:
             - verified (bool): True iff distance <= threshold AND img has exactly one face.
             - message (str | None): Reason when not verified, None when verified.
+            - distance (float | None): Computed distance between the supplied and cached
+                embeddings. Present only once the comparison runs (single face + cached
+                embedding found); None on earlier error branches.
+            - threshold (float | None): Decision threshold for the model/metric. Present
+                whenever `distance` is; None on earlier error branches.
     """
     if l2_normalize is True and distance_metric == "euclidean":
         distance_metric = "euclidean_l2"
 
-    threshold = find_threshold(model_name=model_name, distance_metric=distance_metric)
+    if threshold is None:
+        threshold = find_threshold(model_name=model_name, distance_metric=distance_metric)
 
     db_client = __connect_database(
         database_type=database_type,
@@ -764,9 +775,16 @@ def identify(
         return {"verified": False, "message": f"Unsupported distance metric: {distance_metric}"}
 
     verified = bool(distance <= threshold)
+    distance = round(float(distance), 4)
+    threshold = round(float(threshold), 4)
 
     if verified:
-        return {"verified": True, "message": None}
+        return {
+            "verified": True,
+            "message": None,
+            "distance": distance,
+            "threshold": threshold,
+        }
 
     return {
         "verified": False,
@@ -774,6 +792,8 @@ def identify(
             f"Face mismatch (distance={distance:.4f}, threshold={threshold:.4f}, "
             f"metric={distance_metric})"
         ),
+        "distance": distance,
+        "threshold": threshold,
     }
 
 
